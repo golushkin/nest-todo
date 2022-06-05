@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { UsersModule } from '../../src/users/users.module';
 import { MongooseModule, getConnectionToken } from '@nestjs/mongoose'
-import { generateDbName } from '../helpers/mongo';
+import { generateDbName, createUser } from '../helpers/mongo';
 import { Connection, Model } from 'mongoose';
 import { getGlobalPipes } from '../../src/utils/pipes';
 import { getGlobalFilters } from '../../src/utils/filters';
@@ -12,7 +12,7 @@ import { User } from '../../src/schemas/user.schema'
 import { HttpAdapterHost } from '@nestjs/core';
 import { checkSuccessBody } from '../helpers/check';
 
-describe('User create tests', () => {
+describe('User patch tests', () => {
   let app: INestApplication;
   let client: request.SuperTest<request.Test>;
   let connection: Connection
@@ -52,15 +52,16 @@ describe('User create tests', () => {
     }))
   })
 
-  it('create success', async () => {
-    const { status, body } = await client.post(`${baseUrl}/`).send({ userName: 'test', pass: 'test' })
+  it('patch success', async () => {
+    const newUserName = 'test1'
+    const { _id: userId } = await createUser(userModel)
+    const { status, body } = await client.patch(`${baseUrl}/${userId}`).send({ userName: newUserName })
 
-    expect(status).toBe(201)
+    expect(status).toBe(200)
     checkSuccessBody(body)
 
-    const { _id } = body.data
-
-    const data = await userModel.findById(_id)
+    const data = await userModel.findById(userId)
     expect(data).toBeTruthy()
+    expect(data.userName).toBe(newUserName)
   });
 });

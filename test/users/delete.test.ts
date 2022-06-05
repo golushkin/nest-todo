@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { UsersModule } from '../../src/users/users.module';
 import { MongooseModule, getConnectionToken } from '@nestjs/mongoose'
-import { generateDbName } from '../helpers/mongo';
+import { generateDbName, createUser } from '../helpers/mongo';
 import { Connection, Model } from 'mongoose';
 import { getGlobalPipes } from '../../src/utils/pipes';
 import { getGlobalFilters } from '../../src/utils/filters';
@@ -12,7 +12,7 @@ import { User } from '../../src/schemas/user.schema'
 import { HttpAdapterHost } from '@nestjs/core';
 import { checkSuccessBody } from '../helpers/check';
 
-describe('User create tests', () => {
+describe('User delete tests', () => {
   let app: INestApplication;
   let client: request.SuperTest<request.Test>;
   let connection: Connection
@@ -52,15 +52,14 @@ describe('User create tests', () => {
     }))
   })
 
-  it('create success', async () => {
-    const { status, body } = await client.post(`${baseUrl}/`).send({ userName: 'test', pass: 'test' })
+  it('delete success', async () => {
+    const { _id: userId } = await createUser(userModel)
+    const { status, body } = await client.delete(`${baseUrl}/${userId}`)
 
-    expect(status).toBe(201)
+    expect(status).toBe(200)
     checkSuccessBody(body)
 
-    const { _id } = body.data
-
-    const data = await userModel.findById(_id)
-    expect(data).toBeTruthy()
+    const data = await userModel.findById(userId)
+    expect(data).toBeNull()
   });
 });
